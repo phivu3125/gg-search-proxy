@@ -1,0 +1,25 @@
+# secrets / local config
+.env
+.mcp.json
+
+# agent tooling
+.pi/
+.slp/
+
+# database & logs (contains OAuth refresh tokens — never commit)
+data/
+
+# build artifacts (root-anchored so cmd/ggsearch/ source is never ignored)
+*.exe
+*.exe~
+/ggsearch
+/ggsearch-linux-*
+/ggsearch-darwin-*
+/dist/
+
+# go
+/vendor/
+
+# os noise
+Thumbs.db
+.DS_Store
