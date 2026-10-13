@@ -111,10 +111,16 @@ func runServe(cfg *config.Config, log *slog.Logger) {
 	st := openStore(cfg)
 	defer st.Close()
 
+	adminToken, tokenSource := resolveAdminToken(cfg)
+	if adminToken == "" {
+		fmt.Fprintln(os.Stderr, "error: could not create an admin token")
+		os.Exit(1)
+	}
+
 	mgr := manager.New(st, log)
 	handler := server.Handler(server.Deps{
 		Store: st, Manager: mgr, Log: log,
-		AdminToken: cfg.AdminToken, DefaultModel: cfg.DefaultModel,
+		AdminToken: adminToken, DefaultModel: cfg.DefaultModel,
 	})
 
 	srv := &http.Server{
@@ -124,9 +130,8 @@ func runServe(cfg *config.Config, log *slog.Logger) {
 	}
 	go func() {
 		fmt.Printf("ggsearch listening on http://localhost%s\n", displayAddr(cfg.Addr))
-		if cfg.AdminToken == "" {
-			fmt.Println("note: GGSP_ADMIN_TOKEN not set — /v1 admin endpoints are disabled")
-		}
+		fmt.Printf("admin endpoints: /v1/keys /v1/accounts /v1/usage\n")
+		fmt.Printf("admin token (%s): %s\n", tokenSource, adminToken)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 			os.Exit(1)
@@ -147,6 +152,31 @@ func displayAddr(addr string) string {
 		return addr
 	}
 	return "/" + addr
+}
+
+// resolveAdminToken returns the admin token and where it came from:
+//  1. GGSP_ADMIN_TOKEN (.env or environment) — explicit wins
+//  2. <db-dir>/admin-token file — persisted auto-generated token
+//  3. generate a random one and persist it next to the database
+//
+// To rotate: change GGSP_ADMIN_TOKEN in .env, or delete the admin-token file.
+func resolveAdminToken(cfg *config.Config) (string, string) {
+	if cfg.AdminToken != "" {
+		return cfg.AdminToken, "from GGSP_ADMIN_TOKEN"
+	}
+	path := filepath.Join(filepath.Dir(cfg.DBPath), "admin-token")
+	if b, err := os.ReadFile(path); err == nil {
+		if t := strings.TrimSpace(string(b)); t != "" {
+			return t, "from " + path + " — delete file to rotate"
+		}
+	}
+	t := "gsk-admin-" + store.NewAPISecret()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err == nil {
+		if err := os.WriteFile(path, []byte(t), 0o600); err != nil {
+			fmt.Fprintf(os.Stderr, "warn: could not persist admin token: %v\n", err)
+		}
+	}
+	return t, "auto-generated, saved to " + path
 }
 
 func runLogin(cfg *config.Config, log *slog.Logger) {

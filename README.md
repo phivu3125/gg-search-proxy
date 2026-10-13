@@ -85,7 +85,7 @@ cp .env.example .env
 |---|---|---|
 | `GGSP_ADDR` | `:20129` | listen address |
 | `GGSP_DB` | `data/ggsearch.db` | SQLite path |
-| `GGSP_ADMIN_TOKEN` | — | enables admin endpoints (keys, accounts, usage) |
+| `GGSP_ADMIN_TOKEN` | auto-generated | token for admin endpoints — if unset, a random one is generated on first run, printed at startup, and saved to `<db-dir>/admin-token` (delete the file to rotate) |
 | `GGSP_DEFAULT_MODEL` | `gemini-2.5-flash` | grounding model |
 | `GGSP_UPSTREAM_TIMEOUT` | `20s` | upstream HTTP timeout |
 

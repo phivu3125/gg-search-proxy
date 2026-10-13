@@ -152,3 +152,6 @@ func NewAPIKeyMaterial() (full, hash, prefix string) {
 	full = "gsk-" + randomHex(20)
 	return full, sha256Hex(full), full[:8]
 }
+
+// NewAPISecret returns just the random hex secret part (no gsk- prefix, no hash).
+func NewAPISecret() string { return randomHex(20) }
