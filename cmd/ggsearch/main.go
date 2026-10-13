@@ -26,7 +26,10 @@ func main() {
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
-	rest := os.Args[2:]
+	var rest []string
+	if len(os.Args) > 2 {
+		rest = os.Args[2:]
+	}
 
 	fs := flag.NewFlagSet(cmd, flag.ContinueOnError)
 	var dbPath, addr string
